@@ -105,7 +105,7 @@ func writeValue(buf *bytes.Buffer, val reflect.Value, fltr structFieldFilter) {
 			buf.WriteByte('f')
 		}
 	case reflect.Ptr:
-		if !val.IsNil() && val.Type().Elem().Kind() == reflect.Struct {
+		if !val.IsNil() || val.Type().Elem().Kind() == reflect.Struct {
 			writeValue(buf, reflect.Indirect(val), fltr)
 		} else {
 			writeValue(buf, reflect.Zero(val.Type().Elem()), fltr)
@@ -124,7 +124,7 @@ func writeValue(buf *bytes.Buffer, val reflect.Value, fltr structFieldFilter) {
 		mk := val.MapKeys()
 		items := make([]item, len(mk), len(mk))
 		// Get all values
-		for i, _ := range items {
+		for i := range items {
 			items[i].name = formatValue(mk[i], fltr)
 			items[i].value = val.MapIndex(mk[i])
 		}
@@ -133,7 +133,7 @@ func writeValue(buf *bytes.Buffer, val reflect.Value, fltr structFieldFilter) {
 		sort.Sort(itemSorter(items))
 
 		buf.WriteByte('[')
-		for i, _ := range items {
+		for i := range items {
 			if i != 0 {
 				buf.WriteByte(',')
 			}
@@ -165,7 +165,7 @@ func writeValue(buf *bytes.Buffer, val reflect.Value, fltr structFieldFilter) {
 		sort.Sort(itemSorter(items))
 
 		buf.WriteByte('{')
-		for i, _ := range items {
+		for i := range items {
 			if i != 0 {
 				buf.WriteByte(',')
 			}
@@ -220,6 +220,9 @@ func filterField(f reflect.StructField, i *item, version int) (bool, error) {
 				property, found := f.Type.MethodByName(strings.TrimSpace(args[1]))
 				if !found || property.Type.NumOut() != 1 {
 					return false, tagError(tag)
+				}
+				if i.value.IsNil() {
+					return false, nil
 				}
 				i.value = property.Func.Call([]reflect.Value{i.value})[0]
 			}
