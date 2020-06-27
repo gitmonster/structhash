@@ -105,7 +105,7 @@ func writeValue(buf *bytes.Buffer, val reflect.Value, fltr structFieldFilter) {
 			buf.WriteByte('f')
 		}
 	case reflect.Ptr:
-		if !val.IsNil() || val.Type().Elem().Kind() == reflect.Struct {
+		if !val.IsNil() && val.Type().Elem().Kind() == reflect.Struct {
 			writeValue(buf, reflect.Indirect(val), fltr)
 		} else {
 			writeValue(buf, reflect.Zero(val.Type().Elem()), fltr)
